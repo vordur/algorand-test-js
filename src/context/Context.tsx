@@ -22,6 +22,7 @@ export interface StateContext {
     acc: UserAcc;
     mnemonic: string;
   };
+  creatorInfo: Record<string, any>;
 }
 
 interface Store {
@@ -37,6 +38,7 @@ export const defaultState: StateContext = {
     },
     mnemonic: "",
   },
+  creatorInfo: {},
 };
 
 const Context = createContext<Store>({ state: defaultState });
