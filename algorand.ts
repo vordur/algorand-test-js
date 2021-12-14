@@ -73,48 +73,39 @@ const waitForConfirmation = async function (
 export async function createApp(
   client: algosdk.Algodv2,
   approval: Uint8Array,
-  clear_state: Uint8Array
+  clear_state: Uint8Array,
+  appCreator: UserAcc,
+  appArgs: Uint8Array[]
 ) {
-  const appCreator = createTestAcc();
-  // const approval = await readTeal(
-  //   algodClientDev,
-  //   "../../../public/approval.teal"
-  // );
-
-  // const clear_state = await readTeal(
-  //   algodClientDev,
-  //   "../../../public/clear_state.teal"
-  // );
-
   const params = await client.getTransactionParams().do();
   const onComplete = algosdk.OnApplicationComplete.NoOpOC;
-  const appLocalInts = 0;
-  const appLocalByteSlices = 0;
-  const appGlobalInts = 7;
-  const num_byte_slices = 2;
-  console.log("appCreator", appCreator);
+  // declare application state storage (immutable)
+  const localInts = 1;
+  const localBytes = 1;
+  const globalInts = 1;
+  const globalBytes = 2;
+
   const txn = algosdk.makeApplicationCreateTxn(
-    appCreator.acc.addr,
+    appCreator.addr,
     params,
     onComplete,
     approval,
     clear_state,
-    appLocalInts,
-    appLocalByteSlices,
-    appGlobalInts,
-    num_byte_slices
+    localInts,
+    localBytes,
+    globalInts,
+    globalBytes,
+    appArgs
   );
 
   // Signin transaction
-  const signedTxn = txn.signTxn(appCreator.acc.sk);
+  const signedTxn = txn.signTxn(appCreator.sk);
   const transactionId = txn.txID().toString();
   console.log("Signed transaction with txID: %s", transactionId);
   // Submit the transaction
   await client.sendRawTransaction(signedTxn).do();
-  console.log("GOTHERE?");
   // Wait for confirmation
   await waitForConfirmation(client, transactionId);
-  console.log("nooo?");
   // display results
   const transactionResponse = await client
     .pendingTransactionInformation(transactionId)

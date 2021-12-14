@@ -3,7 +3,7 @@ from pyteal import *
 def approval_program():
     # insurer_key = Bytes("insurer")
     claimer_key = Bytes("claimer")
-    vet_key = Bytes("vet_verification")
+    # vet_key = Bytes("vet_verification")
 
     is_app_creator = Txn.sender() == Global.creator_address()
 
@@ -21,6 +21,7 @@ def approval_program():
             InnerTxnBuilder.Submit(),
         )
 
+    vet_key = Btoi(Txn.application_args[1])
     on_health =  Seq(
         Assert(is_app_creator),
         If(App.globalGet(vet_key) == Int(1)).Then(
@@ -53,7 +54,6 @@ def approval_program():
     on_create = Seq(
         # App.globalPut(insurer_key, Txn.sender()),
         App.globalPut(claimer_key, Txn.application_args[0]),
-        App.globalPut(vet_key, Txn.application_args[1]),
         Approve(),
     )
 

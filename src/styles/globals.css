@@ -7,6 +7,10 @@ body {
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 }
 
+p {
+  word-break: break-word;
+}
+
 a {
   color: lightseagreen;
   text-decoration: none;

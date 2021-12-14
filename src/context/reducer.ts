@@ -3,6 +3,7 @@ import { StateContext } from "./Context";
 export enum ActionType {
   SET_INSURERACC = "set insurer account",
   SET_CREATOR_INFO = "set creator wallet",
+  SET_CLAIMER_WALLET = "set claimer wallet",
 }
 
 export type Action = {
@@ -29,6 +30,15 @@ export const reducer = (state: StateContext, action: Action) => {
       return {
         ...state,
         creatorInfo: action.payload.creatorInfo,
+      };
+    case ActionType.SET_CLAIMER_WALLET:
+      localStorage.setItem(
+        "claimer-wallet",
+        JSON.stringify(action.payload.claimerAcc)
+      );
+      return {
+        ...state,
+        claimerAcc: action.payload.claimerAcc,
       };
     default:
       throw new Error("Not among actions");

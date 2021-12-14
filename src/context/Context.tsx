@@ -22,6 +22,10 @@ export interface StateContext {
     acc: UserAcc;
     mnemonic: string;
   };
+  claimerAcc: {
+    acc: UserAcc;
+    mnemonic: string;
+  };
   creatorInfo: Record<string, any>;
 }
 
@@ -32,6 +36,13 @@ interface Store {
 
 export const defaultState: StateContext = {
   insurerAcc: {
+    acc: {
+      addr: "",
+      sk: new Uint8Array(),
+    },
+    mnemonic: "",
+  },
+  claimerAcc: {
     acc: {
       addr: "",
       sk: new Uint8Array(),
