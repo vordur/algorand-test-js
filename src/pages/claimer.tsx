@@ -12,8 +12,7 @@ export default function Index() {
 
   const [addressClaimer, setAddressClaimer] = useState("");
   const [status, setStatus] = useState("");
-  const [claim, setClaim] = useState("");
-  const [accInfo, setAccInfo] = useState<Record<string, any>>();
+  const [claim, setClaim] = useState("health");
 
   const createAccount = async () => {
     const user = createTestAcc();
@@ -43,7 +42,7 @@ export default function Index() {
         setAddressClaimer(parsed.acc.addr);
 
         context.dispatch?.({
-          type: ActionType.SET_INSURERACC,
+          type: ActionType.SET_CLAIMER_WALLET,
           payload: {
             ...context.state,
             claimerAcc: {
@@ -55,6 +54,18 @@ export default function Index() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const claiming = async () => {
+    const data = {
+      status: "open",
+      type: claim,
+    };
+
+    localStorage.setItem("claimer_request", JSON.stringify(data));
+    setStatus(
+      "Your doctor needs to confirm the documents/data you've been requested"
+    );
+  };
 
   return (
     <div className={styles.container}>
@@ -71,7 +82,7 @@ export default function Index() {
         </button>
 
         <p className={styles.walletInfo}>
-          <strong>Insurer wallet: </strong>
+          <strong>Claimer wallet: </strong>
           <i
             onClick={() => {
               navigator.clipboard.writeText(addressClaimer);
@@ -88,7 +99,9 @@ export default function Index() {
           <option value="care">Care</option>
         </select>
 
-        <button className={styles.button}>Tilkynna</button>
+        <button className={styles.button} onClick={claiming}>
+          Tilkynna
+        </button>
 
         <p>{status}</p>
       </main>

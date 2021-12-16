@@ -13,15 +13,6 @@ export type Action = {
 
 export const reducer = (state: StateContext, action: Action) => {
   switch (action.type) {
-    case ActionType.SET_INSURERACC:
-      localStorage.setItem(
-        "insurer-wallet",
-        JSON.stringify(action.payload.insurerAcc)
-      );
-      return {
-        ...state,
-        insurerAcc: action.payload.insurerAcc,
-      };
     case ActionType.SET_CREATOR_INFO:
       localStorage.setItem(
         "insurer-acc",

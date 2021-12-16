@@ -75,15 +75,18 @@ export async function createApp(
   approval: Uint8Array,
   clear_state: Uint8Array,
   appCreator: UserAcc,
-  appArgs: Uint8Array[]
+  appArgs: Uint8Array[],
+  claimerAddr: string[]
 ) {
   const params = await client.getTransactionParams().do();
   const onComplete = algosdk.OnApplicationComplete.NoOpOC;
   // declare application state storage (immutable)
   const localInts = 1;
   const localBytes = 1;
-  const globalInts = 1;
+  const globalInts = 2;
   const globalBytes = 2;
+
+  console.log("claimer", claimerAddr);
 
   const txn = algosdk.makeApplicationCreateTxn(
     appCreator.addr,
@@ -114,4 +117,70 @@ export async function createApp(
   const appId = transactionResponse["application-index"];
   console.log("Created new app-id: ", appId);
   return appId;
+}
+
+export async function callApp(
+  appId: number,
+  client: algosdk.Algodv2,
+  appCreator: UserAcc,
+  appArgs: Uint8Array[],
+  claimerAddr: string
+) {
+  console.log("here", claimerAddr);
+  const params = await client.getTransactionParams().do();
+  // const txn = algosdk.makeApplicationNoOpTxn(
+  //   appCreator.addr,
+  //   params,
+  //   appId,
+  //   appArgs,
+  //   claimerAddr
+  // );
+
+  // Eitthvað tölur sem við þurfum að reikna á eftir
+  const fundingEscrowAmount = 100_000 + 3 * 1_000;
+
+  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    suggestedParams: params,
+    to: claimerAddr,
+    from: appCreator.addr,
+    amount: fundingEscrowAmount,
+  });
+
+  const txId = txn.txID().toString();
+
+  // Sign the transaction
+  const signedTxn = txn.signTxn(appCreator.sk);
+  console.log("Signed transaction with txID: %s", txId);
+
+  // Submit the transaction
+  await client.sendRawTransaction(signedTxn).do();
+
+  // Wait for confirmation
+  await waitForConfirmation(client, txId);
+
+  // display results
+  const transactionResponse = await client
+    .pendingTransactionInformation(txId)
+    .do();
+  console.log("Called app-id:", transactionResponse["txn"]["txn"]["apid"]);
+  if (transactionResponse["global-state-delta"] !== undefined) {
+    console.log(
+      "Global State updated:",
+      transactionResponse["global-state-delta"]
+    );
+  }
+  if (transactionResponse["local-state-delta"] !== undefined) {
+    console.log(
+      "Local State updated:",
+      transactionResponse["local-state-delta"]
+    );
+  }
+}
+
+export function decodedAddr(addr: string) {
+  return algosdk.decodeAddress(addr);
+}
+
+export function encodedNumber(num: number) {
+  return algosdk.encodeUint64(num);
 }

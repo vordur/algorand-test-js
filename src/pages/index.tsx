@@ -6,6 +6,7 @@ import {
   algodClientDev,
   createApp,
   createTestAcc,
+  decodedAddr,
   readTeal,
   UserAcc,
 } from "../../algorand";
@@ -46,6 +47,7 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
   const [accInfo, setAccInfo] = useState<Record<string, any>>();
   const [wallet, setWallet] = useState<UserAcc>();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [status, setStatus] = useState("The app id is: ");
 
   const getAccInfo = useCallback(async (address: string) => {
     try {
@@ -53,13 +55,13 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
 
       accInfo &&
         context.dispatch?.({
-          type: ActionType.SET_INSURERACC,
+          type: ActionType.SET_CREATOR_INFO,
           payload: {
             ...context.state,
             creatorInfo: accountInfo,
           },
         });
-
+      console.log(accountInfo);
       setAccInfo(accountInfo);
     } catch (e) {
       console.error(e);
@@ -70,16 +72,18 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
   const onCreateApp = useCallback(
     async (claimerWallet: string) => {
       setIsModalOpen(false);
-      const appArgs = [new Uint8Array(Buffer.from(claimerWallet))];
+      const appArgs = [decodedAddr(claimerWallet).publicKey];
       try {
-        const apiId = await createApp(
+        const appId = await createApp(
           algodClientDev,
           new Uint8Array(approval_arr),
           new Uint8Array(clear_state_arr),
           wallet!,
-          appArgs
+          appArgs,
+          [claimerWallet]
         );
-        console.log(apiId);
+        localStorage.setItem("app_id", appId);
+        setStatus(`The app id is: ${appId}`);
         getAccInfo(addressSender);
       } catch (e) {
         console.error(e);
@@ -90,6 +94,8 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
 
   const onGetCreatorWallet = useCallback(() => {
     if (window) {
+      const appId = localStorage.getItem("app_id");
+      setStatus(`The app id is: ${appId}`);
       let address;
       const data = localStorage.getItem("insurer-wallet");
       if (!data) {
@@ -97,33 +103,17 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
         setWallet(user.acc);
         address = user!.acc.addr;
         const sk = Array.from(user!.acc.sk) as unknown as Uint8Array;
-
-        context.dispatch?.({
-          type: ActionType.SET_INSURERACC,
-          payload: {
-            ...context.state,
-            insurerAcc: {
-              acc: {
-                ...user!.acc,
-                sk,
-              },
-              mnemonic: user!.mnemonic,
-            },
+        const storeData = {
+          acc: {
+            ...user!.acc,
+            sk,
           },
-        });
+          mnemonic: user!.mnemonic,
+        };
+        localStorage.setItem("insurer-wallet", JSON.stringify(storeData));
       } else {
         const key = JSON.parse(data);
         address = key.acc.addr;
-        context.dispatch?.({
-          type: ActionType.SET_INSURERACC,
-          payload: {
-            ...context.state,
-            insurerAcc: {
-              ...key,
-            },
-          },
-        });
-
         setWallet({
           addr: address,
           sk: new Uint8Array(key.acc.sk),
@@ -177,6 +167,7 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
             Stofna smart contract app
           </button>
         )}
+        <p>{status}</p>
       </main>
       <CustomModal
         isOpen={isModalOpen}
