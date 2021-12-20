@@ -26,17 +26,9 @@ def approval_program():
         Assert(is_app_creator),
         # Assert(is_receiver),
         doctor_approvement.store(Btoi(Txn.application_args[1])),
-        # App.globalPut(vet_key, Btoi(Txn.application_args[1])),
         Assert(doctor_approvement.load() == Int(1)),
         sendPaymentClaim(Int(100)),
         Approve(),
-        # If(App.globalGet(vet_key) == Int(1)).Then(
-        #     Seq(
-        #         sendPaymentClaim(Int(100)),
-        #         Approve(),
-        #     )
-        # ),
-        # Reject(),
     )
 
     stay_days = ScratchVar(TealType.uint64)
