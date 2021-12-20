@@ -7,6 +7,7 @@ import {
   createApp,
   createTestAcc,
   decodedAddr,
+  deleteAlgoApp,
   readTeal,
   UserAcc,
 } from "../../algorand";
@@ -47,7 +48,7 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
   const [accInfo, setAccInfo] = useState<Record<string, any>>();
   const [wallet, setWallet] = useState<UserAcc>();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [status, setStatus] = useState("The app id is: ");
+  const [APPID, setAPPID] = useState<number>(0);
 
   const getAccInfo = useCallback(async (address: string) => {
     try {
@@ -83,7 +84,7 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
           [claimerWallet]
         );
         localStorage.setItem("app_id", appId);
-        setStatus(`The app id is: ${appId}`);
+        setAPPID(+appId);
         getAccInfo(addressSender);
       } catch (e) {
         console.error(e);
@@ -92,10 +93,18 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
     [addressSender, approval_arr, clear_state_arr, getAccInfo, wallet]
   );
 
+  const deleteApp = async () => {
+    try {
+      await deleteAlgoApp(algodClientDev, APPID, wallet!);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const onGetCreatorWallet = useCallback(() => {
     if (window) {
-      const appId = localStorage.getItem("app_id");
-      setStatus(`The app id is: ${appId}`);
+      const appId = localStorage.getItem("app_id") || 0;
+      setAPPID(+appId);
       let address;
       const data = localStorage.getItem("insurer-wallet");
       if (!data) {
@@ -167,7 +176,11 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
             Stofna smart contract app
           </button>
         )}
-        <p>{status}</p>
+        <p>App ID: {APPID}</p>
+
+        <button className={styles.button} onClick={deleteApp}>
+          Delete newest app
+        </button>
       </main>
       <CustomModal
         isOpen={isModalOpen}

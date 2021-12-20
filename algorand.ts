@@ -139,28 +139,37 @@ export async function callApp(
   // Eitthvað tölur sem við þurfum að reikna á eftir
   const fundingEscrowAmount = 100_000 + 3 * 1_000;
 
-  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+  // funding
+  const appAddr = algosdk.getApplicationAddress(appId);
+  const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     suggestedParams: params,
-    to: claimerAddr,
+    to: appAddr,
     from: appCreator.addr,
     amount: fundingEscrowAmount,
   });
 
-  const txId = txn.txID().toString();
+  const txn = algosdk.makeApplicationNoOpTxnFromObject({
+    from: appCreator.addr,
+    suggestedParams: params,
+    appIndex: appId,
+    appArgs: appArgs,
+    accounts: [claimerAddr],
+  });
 
-  // Sign the transaction
+  let txgroup = algosdk.assignGroupID([paymentTxn, txn]);
+
+  const signedPayment = paymentTxn.signTxn(appCreator.sk);
   const signedTxn = txn.signTxn(appCreator.sk);
-  console.log("Signed transaction with txID: %s", txId);
 
-  // Submit the transaction
-  await client.sendRawTransaction(signedTxn).do();
+  let tx = await client.sendRawTransaction([signedPayment, signedTxn]).do();
+  console.log("Transaction : " + tx.txId);
 
-  // Wait for confirmation
-  await waitForConfirmation(client, txId);
+  // Wait for transaction to be confirmed
+  await waitForConfirmation(client, tx.txId);
 
   // display results
   const transactionResponse = await client
-    .pendingTransactionInformation(txId)
+    .pendingTransactionInformation(tx.txId)
     .do();
   console.log("Called app-id:", transactionResponse["txn"]["txn"]["apid"]);
   if (transactionResponse["global-state-delta"] !== undefined) {
@@ -183,4 +192,26 @@ export function decodedAddr(addr: string) {
 
 export function encodedNumber(num: number) {
   return algosdk.encodeUint64(num);
+}
+
+
+export async function deleteAlgoApp(
+  client: algosdk.Algodv2,
+  appId: number,
+  appCreator: UserAcc
+) {
+  const params = await client.getTransactionParams().do();
+  const txn = algosdk.makeApplicationDeleteTxnFromObject({
+    from: appCreator.addr,
+    suggestedParams: params,
+    appIndex: appId,
+  });
+
+  const signedTxn = txn.signTxn(appCreator.sk);
+  const transactionId = txn.txID().toString();
+  console.log("Signed transaction with txID: %s", transactionId);
+  // Submit the transaction
+  await client.sendRawTransaction(signedTxn).do();
+  // Wait for confirmation
+  await waitForConfirmation(client, transactionId);
 }

@@ -47,8 +47,8 @@ export default function Index() {
             addressClaimer
           ));
       } catch (e) {
-        setStatus("Villa");
-        throw e;
+        setStatus("Assert failed");
+        console.error(e);
       }
     }
   };

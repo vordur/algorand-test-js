@@ -1,12 +1,11 @@
 from pyteal import *
 
 def approval_program():
-    # insurer_key = Bytes("insurer")
-    claimer_key = Bytes("claimer")
+    # claimer_key = Bytes("claimer")
     vet_key = Bytes("vet_confirmation")
 
     is_app_creator = Txn.sender() == Global.creator_address()
-    is_receiver = Txn.accounts[1] == App.globalGet(claimer_key)
+    # is_receiver = Txn.accounts[1] == App.globalGet(claimer_key)
 
     @Subroutine(TealType.none)
     def sendPaymentClaim(amount: Expr) -> Expr:
@@ -22,31 +21,34 @@ def approval_program():
             InnerTxnBuilder.Submit(),
         )
 
+    doctor_approvement = ScratchVar(TealType.uint64)
     on_health =  Seq(
         Assert(is_app_creator),
-        Assert(is_receiver),
-        App.globalPut(vet_key, Btoi(Txn.application_args[1])),
-        If(App.globalGet(vet_key) == Int(1)).Then(
-            Seq(
-                sendPaymentClaim(Int(100)),
-                Approve(),
-            )
-        ),
-        Reject(),
+        # Assert(is_receiver),
+        doctor_approvement.store(Btoi(Txn.application_args[1])),
+        # App.globalPut(vet_key, Btoi(Txn.application_args[1])),
+        Assert(doctor_approvement.load() == Int(1)),
+        sendPaymentClaim(Int(100)),
+        Approve(),
+        # If(App.globalGet(vet_key) == Int(1)).Then(
+        #     Seq(
+        #         sendPaymentClaim(Int(100)),
+        #         Approve(),
+        #     )
+        # ),
+        # Reject(),
     )
 
+    stay_days = ScratchVar(TealType.uint64)
     on_care = Seq(
         Assert(is_app_creator),
-        Assert(is_receiver),
-        App.globalPut(vet_key, Btoi(Txn.application_args[1])),
-        App.globalPut(Bytes("days"), Btoi(Txn.application_args[2])),
-        If(App.globalGet(vet_key) == Int(1)).Then(
-            Seq(
-                sendPaymentClaim(Int(20) * App.globalGet(Bytes("days"))),
-                Approve(),
-            )
-        ),
-        Reject(),
+        # Assert(is_receiver),
+        doctor_approvement.store(Btoi(Txn.application_args[1])),
+        stay_days.store(Btoi(Txn.application_args[2])),
+        Assert(doctor_approvement.load() == Int(1)),
+
+        sendPaymentClaim(Int(20) * stay_days.load()),
+        Approve(),
     )
 
     on_call_method = Txn.application_args[0]
