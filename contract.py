@@ -2,7 +2,6 @@ from pyteal import *
 
 def approval_program():
     # claimer_key = Bytes("claimer")
-    vet_key = Bytes("vet_confirmation")
 
     is_app_creator = Txn.sender() == Global.creator_address()
     # is_receiver = Txn.accounts[1] == App.globalGet(claimer_key)
