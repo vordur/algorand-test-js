@@ -33,4 +33,20 @@ yarn install
 yarn run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# Remember to have your logs open on your browser to see what's going on all the time
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result. Here you should follow the given link to fund the address and then create the smart contract with the claimer's address. 
+
+To check transactions and what's going on with the address on the Testnet network, go to [https://testnet.algoexplorer.io](https://testnet.algoexplorer.io)
+
+To get claimer address and also announce
+ - Open a new tab
+ - Go to [http://localhost:3000/claimer](http://localhost:3000/claimer)
+
+To confirm the claimer's data 
+  - Open a new tab
+  - Go to [http://localhost:3000/doctor](http://localhost:3000/doctor)
+
+Since this is just a demo, states are store locally. Remember to refresh the pages and clean the storage if needed, else this will be very buggy.
+
+It's anyway , quite buggy 😅

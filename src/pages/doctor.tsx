@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import Head from "next/head";
-import { algodClientDev, callApp, encodedNumber } from "algorand";
+import { algodClientDev, callApp, decodedAddr, encodedNumber } from "algorand";
 
 import styles from "../styles/Home.module.css";
 
 export default function Index() {
   const [addressClaimer, setAddressClaimer] = useState("");
   const [status, setStatus] = useState("");
-  const [claim, setClaim] = useState({ status: "", type: "" });
+  const [claim, setClaim] = useState({ status: "", type: "", days: 0 });
 
   useEffect(() => {
     if (window) {
@@ -28,8 +28,11 @@ export default function Index() {
     const data = localStorage.getItem("insurer-wallet");
     const appArgs = [
       new Uint8Array(Buffer.from(claim.type)),
+      decodedAddr(addressClaimer).publicKey,
       encodedNumber(value),
     ];
+
+    claim.type === "care" && appArgs.push(encodedNumber(claim.days));
 
     if (data) {
       const insurer = JSON.parse(data);
@@ -46,8 +49,10 @@ export default function Index() {
             appArgs,
             addressClaimer
           ));
+        setStatus("Done! Check claimer's account :)");
+        setClaim({ ...claim, status: "done" });
       } catch (e) {
-        setStatus("Assert failed");
+        setStatus("Assert failed: Doctor says no :D");
         console.error(e);
       }
     }

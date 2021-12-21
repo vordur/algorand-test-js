@@ -1,45 +1,50 @@
 from pyteal import *
 
 def approval_program():
-    # claimer_key = Bytes("claimer")
-
     is_app_creator = Txn.sender() == Global.creator_address()
-    # is_receiver = Txn.accounts[1] == App.globalGet(claimer_key)
 
     @Subroutine(TealType.none)
-    def sendPaymentClaim(amount: Expr) -> Expr:
+    def sendPaymentClaim(receiver: TealType.bytes, amount: TealType.uint64):
         return Seq(
             InnerTxnBuilder.Begin(),
             InnerTxnBuilder.SetFields(
                 {
                     TxnField.type_enum: TxnType.Payment,
+                    TxnField.sender: Global.current_application_address(),
                     TxnField.amount: amount,
-                    TxnField.receiver: Txn.accounts[1] ,
+                    TxnField.receiver: receiver,
                 }
             ),
             InnerTxnBuilder.Submit(),
         )
 
+
     doctor_approvement = ScratchVar(TealType.uint64)
+    receiver_wallet = ScratchVar(TealType.bytes)
     on_health =  Seq(
-        Assert(is_app_creator),
-        # Assert(is_receiver),
-        doctor_approvement.store(Btoi(Txn.application_args[1])),
-        Assert(doctor_approvement.load() == Int(1)),
-        sendPaymentClaim(Int(100)),
-        Approve(),
+        receiver_wallet.store(Txn.application_args[1]),
+        doctor_approvement.store(Btoi(Txn.application_args[2])),
+        If(doctor_approvement.load() == Int(1)).Then(
+            Seq(
+                sendPaymentClaim(receiver_wallet.load(), Int(100000)),
+                Approve(),
+            )
+        ),
+        Reject(),
     )
 
     stay_days = ScratchVar(TealType.uint64)
     on_care = Seq(
-        Assert(is_app_creator),
-        # Assert(is_receiver),
-        doctor_approvement.store(Btoi(Txn.application_args[1])),
-        stay_days.store(Btoi(Txn.application_args[2])),
-        Assert(doctor_approvement.load() == Int(1)),
-
-        sendPaymentClaim(Int(20) * stay_days.load()),
-        Approve(),
+        receiver_wallet.store(Txn.application_args[1]),
+        doctor_approvement.store(Btoi(Txn.application_args[2])),
+        stay_days.store(Btoi(Txn.application_args[3])),
+        If(doctor_approvement.load() == Int(1)).Then(
+            Seq(
+                sendPaymentClaim(receiver_wallet.load(), Int(500) * stay_days.load()),
+                Approve(),
+            )
+        ),
+        Reject(),
     )
 
     on_call_method = Txn.application_args[0]
@@ -50,7 +55,6 @@ def approval_program():
 
     on_create = Seq(
         App.globalPut(Txn.sender(), Global.creator_address()),
-        App.globalPut(Txn.receiver(), Txn.application_args[0]),
         Approve(),
     )
 
@@ -76,7 +80,7 @@ def clear_state_program():
 
 
 if __name__ == "__main__":
-    with open("public/approval.teal", "w") as f:
+    with open("public/mini_approval.teal", "w") as f:
         compiled = compileTeal(approval_program(), mode=Mode.Application, version=5)
         f.write(compiled)
 

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useMemo } from "react";
 import Head from "next/head";
 import { createTestAcc } from "algorand";
 
@@ -13,6 +13,7 @@ export default function Index() {
   const [addressClaimer, setAddressClaimer] = useState("");
   const [status, setStatus] = useState("");
   const [claim, setClaim] = useState("health");
+  const [days, setDays] = useState(5);
 
   const createAccount = async () => {
     const user = createTestAcc();
@@ -33,6 +34,8 @@ export default function Index() {
       },
     });
   };
+
+  const showOptionDays = useMemo(() => claim !== "health", [claim]);
 
   useEffect(() => {
     if (window) {
@@ -59,6 +62,7 @@ export default function Index() {
     const data = {
       status: "open",
       type: claim,
+      days: claim === "health" ? 0 : days,
     };
 
     localStorage.setItem("claimer_request", JSON.stringify(data));
@@ -99,11 +103,30 @@ export default function Index() {
           <option value="care">Care</option>
         </select>
 
+        {showOptionDays && (
+          <select
+            className={styles.select}
+            onChange={(e) => setDays(+e.target.value)}
+          >
+            <option value="5">5</option>
+            <option value="7">7</option>
+            <option value="10">10</option>
+          </select>
+        )}
+
         <button className={styles.button} onClick={claiming}>
           Tilkynna
         </button>
 
         <p>{status}</p>
+        <p>
+          Fara
+          <a href={`https://testnet.algoexplorer.io/address/${addressClaimer}`}>
+            {" "}
+            hér{" "}
+          </a>
+          til að skoða balance hjá claimer
+        </p>
       </main>
     </div>
   );

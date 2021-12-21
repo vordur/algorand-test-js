@@ -126,25 +126,19 @@ export async function callApp(
   appArgs: Uint8Array[],
   claimerAddr: string
 ) {
-  console.log("here", claimerAddr);
   const params = await client.getTransactionParams().do();
-  // const txn = algosdk.makeApplicationNoOpTxn(
-  //   appCreator.addr,
-  //   params,
-  //   appId,
-  //   appArgs,
-  //   claimerAddr
-  // );
 
   // Eitthvað tölur sem við þurfum að reikna á eftir
-  const fundingEscrowAmount = 100_000 + 3 * 1_000;
+  const fundingEscrowAmount = 300_000;
 
   // funding
   const appAddr = algosdk.getApplicationAddress(appId);
+  const t = await client.getApplicationByID(appId).do();
+  console.log(appAddr, t);
   const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     suggestedParams: params,
-    to: appAddr,
     from: appCreator.addr,
+    to: appAddr,
     amount: fundingEscrowAmount,
   });
 
@@ -156,34 +150,21 @@ export async function callApp(
     accounts: [claimerAddr],
   });
 
-  let txgroup = algosdk.assignGroupID([paymentTxn, txn]);
+  algosdk.assignGroupID([paymentTxn, txn]);
 
   const signedPayment = paymentTxn.signTxn(appCreator.sk);
   const signedTxn = txn.signTxn(appCreator.sk);
 
-  let tx = await client.sendRawTransaction([signedPayment, signedTxn]).do();
-  console.log("Transaction : " + tx.txId);
-
-  // Wait for transaction to be confirmed
-  await waitForConfirmation(client, tx.txId);
-
-  // display results
-  const transactionResponse = await client
-    .pendingTransactionInformation(tx.txId)
+  console.log("Sending transactions...");
+  const { txId } = await client
+    .sendRawTransaction([signedPayment, signedTxn])
     .do();
-  console.log("Called app-id:", transactionResponse["txn"]["txn"]["apid"]);
-  if (transactionResponse["global-state-delta"] !== undefined) {
-    console.log(
-      "Global State updated:",
-      transactionResponse["global-state-delta"]
-    );
-  }
-  if (transactionResponse["local-state-delta"] !== undefined) {
-    console.log(
-      "Local State updated:",
-      transactionResponse["local-state-delta"]
-    );
-  }
+
+  // wait for confirmation – timeout after 2 rounds
+  console.log("Awaiting confirmation (this will take several seconds)...");
+  const roundTimeout = 2;
+  await waitForConfirmation(client, txId);
+  console.log("Transactions successful.");
 }
 
 export function decodedAddr(addr: string) {
@@ -193,7 +174,6 @@ export function decodedAddr(addr: string) {
 export function encodedNumber(num: number) {
   return algosdk.encodeUint64(num);
 }
-
 
 export async function deleteAlgoApp(
   client: algosdk.Algodv2,

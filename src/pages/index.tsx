@@ -20,7 +20,7 @@ import styles from "../styles/Home.module.css";
 export const getStaticProps: GetStaticProps = async () => {
   const approval = await readTeal(
     algodClientDev,
-    "../../../public/approval.teal"
+    "../../../public/mini_approval.teal"
   );
 
   const clear_state = await readTeal(
@@ -96,6 +96,7 @@ export default function Home({ approval_arr, clear_state_arr }: Props) {
   const deleteApp = async () => {
     try {
       await deleteAlgoApp(algodClientDev, APPID, wallet!);
+      setAPPID(0);
     } catch (e) {
       console.error(e);
     }
