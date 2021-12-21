@@ -14,7 +14,6 @@ Install dependencies:
 ```bash
 ./sandbox up testnet
 python3 contract.py
-python3 contract.py
 ```
 
 If you have sandbox on that is not testnet, clean it and restart it:
